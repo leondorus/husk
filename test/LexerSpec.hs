@@ -3,6 +3,7 @@ module LexerSpec (spec) where
 import Ast (BuiltIn (..), Constant (..))
 import Lexer
 import Test.Hspec
+import Token
 
 spec :: Spec
 spec = do

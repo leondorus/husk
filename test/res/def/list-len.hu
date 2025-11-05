@@ -1,0 +1,6 @@
+let length = fun l -> 
+    if eq l nil then
+        0
+    else
+        plus 1 (length (tl l));
+let createList = fun el n -> if eq n 0 then nil else cons el (createList el (minus n 1));

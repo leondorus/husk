@@ -1,0 +1,11 @@
+let append = fun l k -> if eq l nil then
+        k
+    else
+        cons (hd l) (append (tl l) k);
+let merge = fun l k -> if or (eq l nil) (eq k nil) then
+        append l k
+    else
+        if (less (hd l) (hd k)) then
+            cons (hd l) (merge (tl l) k)
+        else
+            cons (hd k) (merge l (tl k));

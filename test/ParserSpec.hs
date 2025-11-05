@@ -5,6 +5,7 @@ import Test.Hspec
 import Ast
 import Lexer
 import Parser
+import Token
 
 kIden = Iden "K"
 kComb = Fun [Iden "x", Iden "y"] (cExIden "x")
@@ -53,6 +54,10 @@ spec = do
                         $ Expr appSKK
                     )
 
+        it "parses plus operator right" $ do
+            runParse ast [CONSTANT $ Numb 54, OPERATOR Plus, CONSTANT $ Numb 1024, SMCLMN] `shouldBe` Just (Ast [] $ Expr (App (App (BuiltIn Plus) (Constant $ Numb 54)) (Constant $ Numb 1024)))
+            runParse ast [IDEN "K", CONSTANT $ Numb 53, CONSTANT $ Numb 54, OPERATOR Plus, CONSTANT $ Numb 1024, SMCLMN] `shouldBe` Just (Ast [] $ Expr (App (App (BuiltIn Plus) (App (App (cExIden "K") (Constant $ Numb 53)) (Constant $ Numb 54))) (Constant $ Numb 1024)))
+
         it "parses implicit parenthesis right" $ do
             runParse ast [IDEN "S", IDEN "K", IDEN "K", SMCLMN] `shouldBe` Just (Ast [] $ Expr appSKK)
             runParse ast [IDEN "S", IDEN "K", IDEN "K", IDEN "K", SMCLMN]
@@ -65,4 +70,3 @@ spec = do
         it "does not parse invalid programs" $ do
             runParse ast [LET, IDEN "S", EQL, SMCLMN] `shouldBe` Nothing
             runParse ast [LET, IDEN "S", EQL, LPAR, IDEN "K", SMCLMN] `shouldBe` Nothing
-

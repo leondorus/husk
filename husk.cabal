@@ -29,17 +29,20 @@ library
     hs-source-dirs:   src
 
     exposed-modules: 
-        Lexer
-        , Ast
+        Ast
         , AstToGraph
         , Combined
         , Graph
+        , Lexer
         , Parser
+        , ParserLib
         , ReductionMachine
+        , Token
 
     build-depends:    
         base == 4.*
         , containers
+        , mtl
 
     default-language: Haskell2010
 

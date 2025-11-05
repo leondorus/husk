@@ -1,0 +1,35 @@
+let append = fun l k ->
+    if l == nil then
+        k
+    else
+        cons (hd l) (append (tl l) k);
+let merge = fun l k ->
+    if l == nil || k == nil then
+        append l k
+    else
+        if (hd l) < (hd k) then
+            cons (hd l) (merge (tl l) k)
+        else
+            cons (hd k) (merge l (tl k));
+let length = fun l ->
+    if l == nil then
+        0
+    else
+        (length (tl l)) + 1;
+let takeFirst = fun n l ->
+    if n == 0 then
+        nil
+    else
+        cons (hd l) (takeFirst (n - 1) (tl l));
+let dropFirst = fun n l ->
+    if n == 0 then
+        l
+    else
+        dropFirst (n - 1) (tl l);
+let sort = fun l ->
+    let len = length l in
+    let halfLen = len / 2 in
+    let fHalf = takeFirst halfLen l in
+    let sHalf = dropFirst halfLen l in
+    if len < 2 then l else
+    merge (sort fHalf) (sort sHalf);

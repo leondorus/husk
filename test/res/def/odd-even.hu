@@ -1,0 +1,3 @@
+let even = fun x -> cond (eq x 0) true (odd (minus x 1));
+# Test comment
+let odd = fun x -> cond (eq x 0) false (even (minus x 1));

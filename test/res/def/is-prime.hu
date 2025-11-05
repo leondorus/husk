@@ -1,0 +1,10 @@
+let isdiv = fun n m -> eq (mod n m) 0;
+let isprimecounter = fun i n ->
+    if lesseq (mul i i) n then
+        if isdiv n i then
+            false
+        else
+            isprimecounter (plus i 1) n
+    else
+        true;
+let isprime = fun n -> isprimecounter 2 n;

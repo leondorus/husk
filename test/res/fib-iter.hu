@@ -1,0 +1,8 @@
+let fib n ->
+    let fibTemp a b i n ->
+        if i >= n then
+            a
+        else
+            fibTemp b (a + b) (i + 1) n
+    in fibTemp 0 1 0 n;
+fib 92;
