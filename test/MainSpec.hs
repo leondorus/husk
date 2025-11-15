@@ -2,6 +2,7 @@ module MainSpec (spec) where
 
 import Combined
 import Test.Hspec
+import Control.Exception (evaluate)
 
 fibDef =
     "let fib x -> \
@@ -153,6 +154,13 @@ spec = do
             evaluateString "tl [1];" `shouldBe` "nil\n"
             evaluateString "tl [2];" `shouldBe` "nil\n"
             evaluateString "tl (tl (tl (tl (tl [1, 2, 3, 4, 5]))));" `shouldBe` "nil\n"
+            evaluateString "(1 : 2 : 3 : 4 : 5 : nil);" `shouldBe` "[1, 2, 3, 4, 5]\n"
+            evaluateString "hd (1 : 2 : 3 : 4 : 5 : nil);" `shouldBe` "1\n"
+            evaluateString "tl (1 : 2 : 3 : 4 : 5 : nil);" `shouldBe` "[2, 3, 4, 5]\n"
+            evaluateString "tl (tl (tl (tl (tl (1 : 2 : 3 : 4 : 5 : nil)))));" `shouldBe` "nil\n"
+            evaluateString "tl (tl (tl (tl (tl (1 : 2 : 3 : 4 : 5 : 6 : nil)))));" `shouldBe` "[6]\n"
+
+            evaluate (evaluateString "(1 : 2 : 3 : 4 : 5);") `shouldThrow` anyErrorCall
 
     describe "some programs" $ do
         it "does not evaluate not needed arguments" $ do

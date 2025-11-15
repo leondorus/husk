@@ -5,6 +5,7 @@
 module Parser (Parser, ast, runParse, parseAst) where
 
 import Control.Applicative
+import Data.Foldable (foldl')
 
 import Ast
 import ParserLib
@@ -48,19 +49,20 @@ exec = do
 expr :: TParser Expr
 expr = opexpr opList
 
--- TODO add associacivity to list and add cons
-opList :: [[BuiltIn]]
+data Assoc = L | R
+opList :: [([BuiltIn], Assoc)]
 opList =
-    [ [Or]
-    , [And]
-    , [Equal, NEqual]
-    , [Less, LessEq, Greater, GreaterEq]
-    , [Plus, Minus]
-    , [Mul, Div, Mod]
+    [ ([Cons], R)
+    , ([Or], L)
+    , ([And], L)
+    , ([Equal, NEqual], L)
+    , ([Less, LessEq, Greater, GreaterEq], L)
+    , ([Plus, Minus], L)
+    , ([Mul, Div, Mod], L)
     ]
 
-opexpr :: [[BuiltIn]] -> TParser Expr
-opexpr (bs : bss) = do
+opexpr :: [([BuiltIn], Assoc)] -> TParser Expr
+opexpr ((bs, assoc) : bss) = do
     fe <- opexpr bss
     es <-
         many
@@ -69,12 +71,21 @@ opexpr (bs : bss) = do
                 e <- opexpr bss
                 return (op, e)
             )
-    return $ chainOpExList fe es
-  where
-    chainOpExList :: Expr -> [(BuiltIn, Expr)] -> Expr
-    chainOpExList e [] = e
-    chainOpExList fe [(b, e)] = App (App (BuiltIn b) fe) e
-    chainOpExList fe ((b, e) : es) = chainOpExList (App (App (BuiltIn b) fe) e) es
+    case assoc of
+        L -> return $ chainLeftList fe es
+          where
+            chainLeftList :: Expr -> [(BuiltIn, Expr)] -> Expr
+            chainLeftList = foldl' (\ae (b, e) -> applyApp [BuiltIn b, ae, e])
+        R -> return $ chainRightList le res
+          where
+            chainRightList :: Expr -> [(BuiltIn, Expr)] -> Expr
+            chainRightList = foldl' (\ae (b, e) -> applyApp [BuiltIn b, e, ae])
+            (le, res) = reverseListToRight fe es
+            -- Changes (se, [(*_1, e_1), ... (*_n, e_n)]) into (e_n, (*_n, e_n-1), (*_n-1, e_n-2), ... (*_1, fe))
+            reverseListToRight :: Expr -> [(BuiltIn, Expr)] -> (Expr, [(BuiltIn, Expr)])
+            reverseListToRight se = foldl' swapAndAdd (se, [])
+            swapAndAdd :: (Expr, [(BuiltIn, Expr)]) -> (BuiltIn, Expr) -> (Expr, [(BuiltIn, Expr)])
+            swapAndAdd (lastExpr, savedBuiltInExprs) (newBuiltIn, newExpr) = (newExpr, (newBuiltIn, lastExpr) : savedBuiltInExprs)
 opexpr [] = prefixedExpr
 
 prefixedExpr :: TParser Expr
@@ -85,19 +96,14 @@ prefixedExpr = do
   where
     handlePrefOp Nothing e = e
     handlePrefOp (Just Plus) e = e
-    handlePrefOp (Just Minus) e = App (App (BuiltIn Minus) (Constant $ Numb 0)) e
+    handlePrefOp (Just Minus) e = applyApp [BuiltIn Minus, Constant $ Numb 0, e]
     handlePrefOp (Just Not) e = App (BuiltIn Not) e
     handlePrefOp _ _ = undefined
 
 appexpr :: TParser Expr
 appexpr = do
     es <- some noappexpr
-    return $ chainAppExprs es
-  where
-    chainAppExprs :: [Expr] -> Expr
-    chainAppExprs [e] = e
-    chainAppExprs (e1 : e2 : es) = chainAppExprs $ App e1 e2 : es
-    chainAppExprs [] = undefined
+    return $ applyApp es
 
 noappexpr :: TParser Expr
 noappexpr =
@@ -193,7 +199,7 @@ listlit = do
         skiptoken COMMA
         return e
     foldList [] = Constant Nil
-    foldList (e : es) = App (App (BuiltIn Cons) e) (foldList es)
+    foldList (e : es) = applyApp [BuiltIn Cons, e, foldList es]
 
 ifthenelse :: TParser Expr
 ifthenelse = do
@@ -203,7 +209,7 @@ ifthenelse = do
     e1 <- expr
     skiptoken ELSE
     e2 <- expr
-    return $ App (App (App (BuiltIn Cond) b) e1) e2
+    return $ applyApp [BuiltIn Cond, b, e1, e2]
 
 builtin :: TParser BuiltIn
 builtin = do

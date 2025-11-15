@@ -1,4 +1,5 @@
 module Ast where
+import Data.Foldable (foldl')
 
 data Ast = Ast [Stat] Exec deriving (Show, Eq)
 
@@ -47,3 +48,7 @@ data BuiltIn
 
 cExIden :: String -> Expr
 cExIden s = ExIden $ Iden s
+
+applyApp :: [Expr] -> Expr
+applyApp (e : es) = foldl' App e es
+applyApp [] = undefined

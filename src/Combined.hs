@@ -57,4 +57,4 @@ toString graph = do
         rStr <- printList g2
         let connector = if g2 == Constant Nil then "" else ", "
         return $ lStr ++ connector ++ rStr
-    printList g = toString' g
+    printList _ = error "Cannot print resulting list: there is (Cons a b), where b is not Cons"
