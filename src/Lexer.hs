@@ -75,8 +75,8 @@ tokenizeOne s
     | s == "nil" = Just $ CONSTANT Nil
     | s == "hd" = Just $ BUILTIN Hd
     | s == "tl" = Just $ BUILTIN Tl
-    -- Comparison of numbers
-    | suitableNum s = CONSTANT . Numb <$> readMaybe s
+    -- Constants and names
+    | suitableNum s = CONSTANT . Num <$> readMaybe s
     | suitableName s = Just $ IDEN s
     | otherwise = Nothing
 
@@ -110,13 +110,13 @@ breakWordIntoConseq s = fst . fromJust $ parse breakWordIntoConseq' s
 breakWordIntoConseq' :: Parser Char [String]
 breakWordIntoConseq' = do
     some $ asum [idenWord, numbWord, symbWord]
-  where
-    idenWord = do
-        c <- conv isAlpha
-        cs <- many (conv (\ch -> isAlphaNum ch || ch == '_'))
-        return $ c : cs
-    numbWord = some (conv isNumber)
-    symbWord = some (conv (not . isAlphaNum))
+    where
+        idenWord = do
+            c <- conv isAlpha
+            cs <- many (conv (\ch -> isAlphaNum ch || ch == '_'))
+            return $ c : cs
+        numbWord = some (conv isNumber)
+        symbWord = some (conv (not . isAlphaNum))
 
 breakOneWord :: String -> [String]
 breakOneWord "" = []

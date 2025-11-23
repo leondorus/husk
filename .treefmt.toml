@@ -1,0 +1,16 @@
+verbose = 1
+on-unmatched = "debug"
+
+[formatter.hs]
+command = "fourmolu"
+options = [ "-i" ]
+includes = [ "*.hs" ]
+excludes = []
+priority = 0
+
+[formatter.cabal]
+command = "cabal-fmt"
+options = [ "-i", "--indent", "4" ]
+includes = [ "*.cabal" ]
+excludes = []
+priority = 0

@@ -23,7 +23,9 @@ spec = do
                 `shouldBe` Just (Ast [] $ Expr kComb)
 
         it "parses statement and fun" $ do
-            runParse ast [LET, IDEN "K", EQL, FUN, IDEN "x", IDEN "y", ARROW, IDEN "x", SMCLMN, FUN, IDEN "x", IDEN "y", ARROW, IDEN "x", SMCLMN]
+            runParse
+                ast
+                [LET, IDEN "K", EQL, FUN, IDEN "x", IDEN "y", ARROW, IDEN "x", SMCLMN, FUN, IDEN "x", IDEN "y", ARROW, IDEN "x", SMCLMN]
                 `shouldBe` Just (Ast [Let kIden kComb] $ Expr kComb)
 
         it "parses single letin" $ do
@@ -36,7 +38,9 @@ spec = do
                     )
 
         it "parses let and app" $ do
-            runParse ast [LET, IDEN "K", EQL, FUN, IDEN "x", IDEN "y", ARROW, IDEN "x", SMCLMN, LPAR, IDEN "K", IDEN "K", RPAR, SMCLMN]
+            runParse
+                ast
+                [LET, IDEN "K", EQL, FUN, IDEN "x", IDEN "y", ARROW, IDEN "x", SMCLMN, LPAR, IDEN "K", IDEN "K", RPAR, SMCLMN]
                 `shouldBe` Just
                     ( Ast
                         [ Let kIden kComb -- let K = fun x y = x;
@@ -45,7 +49,45 @@ spec = do
                     )
 
         it "parses let K, let S, and SKK" $ do
-            runParse ast [LET, IDEN "K", EQL, FUN, IDEN "x", IDEN "y", ARROW, IDEN "x", SMCLMN, LET, IDEN "S", EQL, FUN, IDEN "x", IDEN "y", IDEN "z", ARROW, LPAR, LPAR, IDEN "x", IDEN "z", RPAR, LPAR, IDEN "y", IDEN "z", RPAR, RPAR, SMCLMN, LPAR, LPAR, IDEN "S", IDEN "K", RPAR, IDEN "K", RPAR, SMCLMN]
+            runParse
+                ast
+                [ LET
+                , IDEN "K"
+                , EQL
+                , FUN
+                , IDEN "x"
+                , IDEN "y"
+                , ARROW
+                , IDEN "x"
+                , SMCLMN
+                , LET
+                , IDEN "S"
+                , EQL
+                , FUN
+                , IDEN "x"
+                , IDEN "y"
+                , IDEN "z"
+                , ARROW
+                , LPAR
+                , LPAR
+                , IDEN "x"
+                , IDEN "z"
+                , RPAR
+                , LPAR
+                , IDEN "y"
+                , IDEN "z"
+                , RPAR
+                , RPAR
+                , SMCLMN
+                , LPAR
+                , LPAR
+                , IDEN "S"
+                , IDEN "K"
+                , RPAR
+                , IDEN "K"
+                , RPAR
+                , SMCLMN
+                ]
                 `shouldBe` Just
                     ( Ast
                         [ Let kIden kComb
@@ -55,8 +97,13 @@ spec = do
                     )
 
         it "parses plus operator right" $ do
-            runParse ast [CONSTANT $ Numb 54, OPERATOR Plus, CONSTANT $ Numb 1024, SMCLMN] `shouldBe` Just (Ast [] $ Expr (App (App (BuiltIn Plus) (Constant $ Numb 54)) (Constant $ Numb 1024)))
-            runParse ast [IDEN "K", CONSTANT $ Numb 53, CONSTANT $ Numb 54, OPERATOR Plus, CONSTANT $ Numb 1024, SMCLMN] `shouldBe` Just (Ast [] $ Expr (App (App (BuiltIn Plus) (App (App (cExIden "K") (Constant $ Numb 53)) (Constant $ Numb 54))) (Constant $ Numb 1024)))
+            runParse ast [CONSTANT $ Num 54, OPERATOR Plus, CONSTANT $ Num 1024, SMCLMN]
+                `shouldBe` Just (Ast [] $ Expr (App (App (BuiltIn Plus) (Constant $ Num 54)) (Constant $ Num 1024)))
+            runParse ast [IDEN "K", CONSTANT $ Num 53, CONSTANT $ Num 54, OPERATOR Plus, CONSTANT $ Num 1024, SMCLMN]
+                `shouldBe` Just
+                    ( Ast [] $
+                        Expr (App (App (BuiltIn Plus) (App (App (cExIden "K") (Constant $ Num 53)) (Constant $ Num 54))) (Constant $ Num 1024))
+                    )
 
         it "parses implicit parenthesis right" $ do
             runParse ast [IDEN "S", IDEN "K", IDEN "K", SMCLMN] `shouldBe` Just (Ast [] $ Expr appSKK)
@@ -64,8 +111,8 @@ spec = do
                 `shouldBe` Just (Ast [] $ Expr (App appSKK (cExIden "K")))
 
         it "parses numbers" $ do
-            runParse ast [IDEN "plus", CONSTANT $ Numb 54, CONSTANT $ Numb 1024, SMCLMN]
-                `shouldBe` Just (Ast [] $ Expr (App (App (cExIden "plus") (Constant $ Numb 54)) (Constant $ Numb 1024)))
+            runParse ast [IDEN "plus", CONSTANT $ Num 54, CONSTANT $ Num 1024, SMCLMN]
+                `shouldBe` Just (Ast [] $ Expr (App (App (cExIden "plus") (Constant $ Num 54)) (Constant $ Num 1024)))
 
         it "does not parse invalid programs" $ do
             runParse ast [LET, IDEN "S", EQL, SMCLMN] `shouldBe` Nothing

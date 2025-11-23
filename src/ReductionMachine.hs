@@ -17,12 +17,12 @@ reduceGraph mainGref = do
     stackRef <- newSTRef [mainGref]
 
     reduceGraph' stackRef
-  where
-    reduceGraph' stackRef = do
-        res <- step stackRef
-        case res of
-            Nothing -> reduceGraph' stackRef
-            Just s -> return s
+    where
+        reduceGraph' stackRef = do
+            res <- step stackRef
+            case res of
+                Nothing -> reduceGraph' stackRef
+                Just s -> return s
 
 step :: STRef s [GraphRef s] -> ST s (Maybe (GraphRef s))
 step stackRef = do
@@ -204,10 +204,10 @@ performBinNumOp stackRef op = do
             ( do
                 (App _ xRef) <- readSTRef ap2
                 (App _ yRef) <- readSTRef ap1
-                (Constant (Numb x)) <- reduceGraph xRef >>= readSTRef
-                (Constant (Numb y)) <- reduceGraph yRef >>= readSTRef
+                (Constant (Num x)) <- reduceGraph xRef >>= readSTRef
+                (Constant (Num y)) <- reduceGraph yRef >>= readSTRef
                 icomb <- newSTRef $ Comb I
-                curRes <- newSTRef $ Constant $ Numb (op x y)
+                curRes <- newSTRef $ Constant $ Num (op x y)
                 writeSTRef ap1 (App icomb curRes)
                 writeSTRef stackRef (ap1 : rest)
                 return Nothing
@@ -222,8 +222,8 @@ performBinComp stackRef op = do
             ( do
                 (App _ xRef) <- readSTRef ap2
                 (App _ yRef) <- readSTRef ap1
-                (Constant (Numb x)) <- reduceGraph xRef >>= readSTRef
-                (Constant (Numb y)) <- reduceGraph yRef >>= readSTRef
+                (Constant (Num x)) <- reduceGraph xRef >>= readSTRef
+                (Constant (Num y)) <- reduceGraph yRef >>= readSTRef
                 icomb <- newSTRef $ Comb I
                 curRes <- newSTRef $ Constant $ Bol (op x y)
                 writeSTRef ap1 (App icomb curRes)

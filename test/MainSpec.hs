@@ -1,8 +1,8 @@
 module MainSpec (spec) where
 
 import Combined
-import Test.Hspec
 import Control.Exception (evaluate)
+import Test.Hspec
 
 fibDef =
     "let fib x -> \
@@ -132,7 +132,8 @@ spec = do
             evaluateString " 5 > 6 == 5 <= 6 && 6 + 2 * 3 != plus 6 2 * 3 || 10 / 2 % 3 == plus 0 1 == true;" `shouldBe` "false\n"
 
         it "works with letin" $ do
-            evaluateString "let plusFive = fun x -> plus 5 x; let y = plusFive 8 in let z = plusFive 1 in plus z y;" `shouldBe` "19\n"
+            evaluateString "let plusFive = fun x -> plus 5 x; let y = plusFive 8 in let z = plusFive 1 in plus z y;"
+                `shouldBe` "19\n"
             evaluateString "let plusFive = fun x -> 5 + x; let y = plusFive 8 in let z = plusFive 1 in z + y;" `shouldBe` "19\n"
             evaluateString "let plusFive = fun x -> let y = plus x 2 in plus y 3; plusFive 7;" `shouldBe` "12\n"
             evaluateString "let plusFive = fun x -> let y = x + 2 in y + 3; plusFive 7;" `shouldBe` "12\n"
@@ -215,8 +216,12 @@ spec = do
             evaluateString . (++ " odd 202;") <$> oddEvenDef `shouldReturn` "false\n"
             evaluateString . (++ " even 202;") <$> oddEvenDef `shouldReturn` "true\n"
 
-            evaluateString "let even = fun x -> cond (eq x 0) true (odd (minus x 1)); let odd = fun x -> mnot (even x); let mnot = fun x -> cond x false true; odd 1001;" `shouldBe` "true\n"
-            evaluateString "let even = fun x -> cond (eq x 0) true (odd (minus x 1)); let odd = fun x -> mnot (even x); let mnot = fun x -> cond x false true; even 1001;" `shouldBe` "false\n"
+            evaluateString
+                "let even = fun x -> cond (eq x 0) true (odd (minus x 1)); let odd = fun x -> mnot (even x); let mnot = fun x -> cond x false true; odd 1001;"
+                `shouldBe` "true\n"
+            evaluateString
+                "let even = fun x -> cond (eq x 0) true (odd (minus x 1)); let odd = fun x -> mnot (even x); let mnot = fun x -> cond x false true; even 1001;"
+                `shouldBe` "false\n"
 
         it "evaluates prime numbers" $ do
             evaluateString . (++ "isprime 2;") <$> isPrimeDef `shouldReturn` "true\n"
@@ -251,10 +256,12 @@ spec = do
 
         it "merges lists" $ do
             evaluateString . (++ "merge [0, 1, 2] [3, 4, 5];") <$> mergeDef `shouldReturn` "[0, 1, 2, 3, 4, 5]\n"
-            evaluateString . (++ "merge [0, 3, 4, 7, 7, 8] [1, 2, 2, 5, 6, 8, 10];") <$> mergeDef `shouldReturn` "[0, 1, 2, 2, 3, 4, 5, 6, 7, 7, 8, 8, 10]\n"
+            evaluateString . (++ "merge [0, 3, 4, 7, 7, 8] [1, 2, 2, 5, 6, 8, 10];") <$> mergeDef
+                `shouldReturn` "[0, 1, 2, 2, 3, 4, 5, 6, 7, 7, 8, 8, 10]\n"
 
         it "sorts lists" $ do
             evaluateString . (++ "sort [];") <$> mergeSortDef `shouldReturn` "nil\n"
             evaluateString . (++ "sort [1];") <$> mergeSortDef `shouldReturn` "[1]\n"
             evaluateString . (++ "sort [1, 2];") <$> mergeSortDef `shouldReturn` "[1, 2]\n"
-            evaluateString . (++ "sort [1, 43, 8, 2, 3, 1, 73, 9, 12];") <$> mergeSortDef `shouldReturn` "[1, 1, 2, 3, 8, 9, 12, 43, 73]\n"
+            evaluateString . (++ "sort [1, 43, 8, 2, 3, 1, 73, 9, 12];") <$> mergeSortDef
+                `shouldReturn` "[1, 1, 2, 3, 8, 9, 12, 43, 73]\n"

@@ -32,7 +32,7 @@ astToGraph (Ast stats (Expr finexpr)) = do
             case v of
                 (Var nm) ->
                     let mbRealGraphRef = Map.lookup nm m
-                     in maybe
+                    in  maybe
                             (return ())
                             ( \realGraphRef -> do
                                 realGraph <- readSTRef realGraphRef

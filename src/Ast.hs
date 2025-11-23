@@ -1,4 +1,5 @@
 module Ast where
+
 import Data.Foldable (foldl')
 
 data Ast = Ast [Stat] Exec deriving (Show, Eq)
@@ -16,7 +17,7 @@ data Expr
     deriving (Show, Eq)
 newtype Iden = Iden String deriving (Show, Eq)
 data Constant
-    = Numb Int
+    = Num Int
     | Bol Bool
     | Nil
     deriving (Show, Eq)

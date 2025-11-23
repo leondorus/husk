@@ -73,19 +73,19 @@ opexpr ((bs, assoc) : bss) = do
             )
     case assoc of
         L -> return $ chainLeftList fe es
-          where
-            chainLeftList :: Expr -> [(BuiltIn, Expr)] -> Expr
-            chainLeftList = foldl' (\ae (b, e) -> applyApp [BuiltIn b, ae, e])
+            where
+                chainLeftList :: Expr -> [(BuiltIn, Expr)] -> Expr
+                chainLeftList = foldl' (\ae (b, e) -> applyApp [BuiltIn b, ae, e])
         R -> return $ chainRightList le res
-          where
-            chainRightList :: Expr -> [(BuiltIn, Expr)] -> Expr
-            chainRightList = foldl' (\ae (b, e) -> applyApp [BuiltIn b, e, ae])
-            (le, res) = reverseListToRight fe es
-            -- Changes (se, [(*_1, e_1), ... (*_n, e_n)]) into (e_n, (*_n, e_n-1), (*_n-1, e_n-2), ... (*_1, fe))
-            reverseListToRight :: Expr -> [(BuiltIn, Expr)] -> (Expr, [(BuiltIn, Expr)])
-            reverseListToRight se = foldl' swapAndAdd (se, [])
-            swapAndAdd :: (Expr, [(BuiltIn, Expr)]) -> (BuiltIn, Expr) -> (Expr, [(BuiltIn, Expr)])
-            swapAndAdd (lastExpr, savedBuiltInExprs) (newBuiltIn, newExpr) = (newExpr, (newBuiltIn, lastExpr) : savedBuiltInExprs)
+            where
+                chainRightList :: Expr -> [(BuiltIn, Expr)] -> Expr
+                chainRightList = foldl' (\ae (b, e) -> applyApp [BuiltIn b, e, ae])
+                (le, res) = reverseListToRight fe es
+                -- Changes (se, [(*_1, e_1), ... (*_n, e_n)]) into (e_n, (*_n, e_n-1), (*_n-1, e_n-2), ... (*_1, fe))
+                reverseListToRight :: Expr -> [(BuiltIn, Expr)] -> (Expr, [(BuiltIn, Expr)])
+                reverseListToRight se = foldl' swapAndAdd (se, [])
+                swapAndAdd :: (Expr, [(BuiltIn, Expr)]) -> (BuiltIn, Expr) -> (Expr, [(BuiltIn, Expr)])
+                swapAndAdd (lastExpr, savedBuiltInExprs) (newBuiltIn, newExpr) = (newExpr, (newBuiltIn, lastExpr) : savedBuiltInExprs)
 opexpr [] = prefixedExpr
 
 prefixedExpr :: TParser Expr
@@ -93,12 +93,12 @@ prefixedExpr = do
     prefOp <- optional (opconv (`elem` [Plus, Minus, Not]))
     e <- appexpr
     return $ handlePrefOp prefOp e
-  where
-    handlePrefOp Nothing e = e
-    handlePrefOp (Just Plus) e = e
-    handlePrefOp (Just Minus) e = applyApp [BuiltIn Minus, Constant $ Numb 0, e]
-    handlePrefOp (Just Not) e = App (BuiltIn Not) e
-    handlePrefOp _ _ = undefined
+    where
+        handlePrefOp Nothing e = e
+        handlePrefOp (Just Plus) e = e
+        handlePrefOp (Just Minus) e = applyApp [BuiltIn Minus, Constant $ Num 0, e]
+        handlePrefOp (Just Not) e = App (BuiltIn Not) e
+        handlePrefOp _ _ = undefined
 
 appexpr :: TParser Expr
 appexpr = do
@@ -193,13 +193,13 @@ listlit = do
             ]
     skiptoken RBRK
     return $ foldList es
-  where
-    exprWithComma = do
-        e <- expr
-        skiptoken COMMA
-        return e
-    foldList [] = Constant Nil
-    foldList (e : es) = applyApp [BuiltIn Cons, e, foldList es]
+    where
+        exprWithComma = do
+            e <- expr
+            skiptoken COMMA
+            return e
+        foldList [] = Constant Nil
+        foldList (e : es) = applyApp [BuiltIn Cons, e, foldList es]
 
 ifthenelse :: TParser Expr
 ifthenelse = do
