@@ -17,8 +17,9 @@ data Expr
     deriving (Show, Eq)
 newtype Iden = Iden String deriving (Show, Eq)
 data Constant
-    = Num Int
-    | Bol Bool
+    = Bol Bool
+    | Chr Char
+    | Num Int
     | Nil
     deriving (Show, Eq)
 
@@ -41,6 +42,9 @@ data BuiltIn
     | And
     | Or
     | Cond
+    | -- Char
+      Ord
+    | GetChr
     | -- List
       Cons
     | Hd

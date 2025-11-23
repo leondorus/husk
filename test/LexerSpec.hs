@@ -136,3 +136,107 @@ spec = do
                     , BUILTIN Equal
                     , BUILTIN NEqual
                     ]
+
+        it "tokenizes chars" $
+            do
+                tokenize "'a' 'b' 'c' 'q'"
+                    `shouldBe` Just [CONSTANT $ Chr 'a', CONSTANT $ Chr 'b', CONSTANT $ Chr 'c', CONSTANT $ Chr 'q']
+                tokenize " '\"' '\\'' '\\n' '\\\\'"
+                    `shouldBe` Just [CONSTANT $ Chr '"', CONSTANT $ Chr '\'', CONSTANT $ Chr '\n', CONSTANT $ Chr '\\']
+                tokenize "'ab'"
+                    `shouldBe` Nothing
+                tokenize "';kj'"
+                    `shouldBe` Nothing
+
+        it "tokenizes strings" $
+            do
+                tokenize "\"asdf\" \"jkl;\" \"qwerty\""
+                    `shouldBe` Just [STRING "asdf", STRING "jkl;", STRING "qwerty"]
+                tokenize "\"as\\\"df\" \"jkl;\" \"qw\\\"erty\""
+                    `shouldBe` Just [STRING "as\"df", STRING "jkl;", STRING "qw\"erty"]
+                tokenize "\"as\\ndf\" \"jkl;\" \"qw\\nerty\""
+                    `shouldBe` Just [STRING "as\ndf", STRING "jkl;", STRING "qw\nerty"]
+                tokenize "\"asdf\" \"jkl;\\\\\" \"qwerty\""
+                    `shouldBe` Just [STRING "asdf", STRING "jkl;\\", STRING "qwerty"]
+
+    describe "wordStringsAndChars" $ do
+        it "does not change program without strings and chars" $ do
+            wordStringsAndChars "" `shouldBe` Just [""]
+            wordStringsAndChars "asdfasdf" `shouldBe` Just ["asdfasdf"]
+            wordStringsAndChars "asdfas asdlkfj a;ldka asdf !@#$ asdf @#$%@#$ _)*&)(&"
+                `shouldBe` Just ["asdfas asdlkfj a;ldka asdf !@#$ asdf @#$%@#$ _)*&)(&"]
+
+        it "words empty string" $ do
+            wordStringsAndChars "\"\"" `shouldBe` Just ["\"\""]
+            wordStringsAndChars "asdf\"\"" `shouldBe` Just ["asdf", "\"\""]
+            wordStringsAndChars "\"\"asdf" `shouldBe` Just ["\"\"", "asdf"]
+            wordStringsAndChars "asdf\"\"asdf" `shouldBe` Just ["asdf", "\"\"", "asdf"]
+
+        it "words some string" $ do
+            wordStringsAndChars "\"jkl;\"" `shouldBe` Just ["\"jkl;\""]
+            wordStringsAndChars "asdf\"jkl;\"" `shouldBe` Just ["asdf", "\"jkl;\""]
+            wordStringsAndChars "\"jkl;\"asdf" `shouldBe` Just ["\"jkl;\"", "asdf"]
+            wordStringsAndChars "asdf\"jkl;\"asdf" `shouldBe` Just ["asdf", "\"jkl;\"", "asdf"]
+
+        it "words multiple strings" $ do
+            wordStringsAndChars "\"jkl;\"\"xxxx\"" `shouldBe` Just ["\"jkl;\"", "\"xxxx\""]
+            wordStringsAndChars "\"xxxx\"asdf\"jkl;\"" `shouldBe` Just ["\"xxxx\"", "asdf", "\"jkl;\""]
+            wordStringsAndChars "abobus\"xxxx\"asdf\"jkl;\"" `shouldBe` Just ["abobus", "\"xxxx\"", "asdf", "\"jkl;\""]
+            wordStringsAndChars "abobus\"xxxx\"asdf\"jkl;\"bebra"
+                `shouldBe` Just ["abobus", "\"xxxx\"", "asdf", "\"jkl;\"", "bebra"]
+            wordStringsAndChars "abobus\"xxxx\"\"jkl;\"bebra" `shouldBe` Just ["abobus", "\"xxxx\"", "\"jkl;\"", "bebra"]
+            wordStringsAndChars "\"lazy\"\"man\"abobus\"xxxx\"asdf\"jkl;\"bebra\"end\""
+                `shouldBe` Just ["\"lazy\"", "\"man\"", "abobus", "\"xxxx\"", "asdf", "\"jkl;\"", "bebra", "\"end\""]
+
+        it "words string with \\\"" $ do
+            wordStringsAndChars "\"j\\\"kl;\"" `shouldBe` Just ["\"j\\\"kl;\""]
+            wordStringsAndChars "asdf\"j\\\"kl;\"" `shouldBe` Just ["asdf", "\"j\\\"kl;\""]
+            wordStringsAndChars "\"j\\\"kl;\"asdf" `shouldBe` Just ["\"j\\\"kl;\"", "asdf"]
+            wordStringsAndChars "asdf\"j\\\"kl;\"asdf" `shouldBe` Just ["asdf", "\"j\\\"kl;\"", "asdf"]
+
+        it "words string with '" $ do
+            wordStringsAndChars "\"j'kl;\"" `shouldBe` Just ["\"j'kl;\""]
+            wordStringsAndChars "asdf\"j'kl;\"" `shouldBe` Just ["asdf", "\"j'kl;\""]
+            wordStringsAndChars "\"j'kl;\"asdf" `shouldBe` Just ["\"j'kl;\"", "asdf"]
+            wordStringsAndChars "asdf\"j'kl;\"asdf" `shouldBe` Just ["asdf", "\"j'kl;\"", "asdf"]
+
+        it "words empty char" $ do
+            wordStringsAndChars "''" `shouldBe` Just ["''"]
+            wordStringsAndChars "asdf''" `shouldBe` Just ["asdf", "''"]
+            wordStringsAndChars "''asdf" `shouldBe` Just ["''", "asdf"]
+            wordStringsAndChars "asdf''asdf" `shouldBe` Just ["asdf", "''", "asdf"]
+
+        it "words some string" $ do
+            wordStringsAndChars "'jkl;'" `shouldBe` Just ["'jkl;'"]
+            wordStringsAndChars "asdf'jkl;'" `shouldBe` Just ["asdf", "'jkl;'"]
+            wordStringsAndChars "'jkl;'asdf" `shouldBe` Just ["'jkl;'", "asdf"]
+            wordStringsAndChars "asdf'jkl;'asdf" `shouldBe` Just ["asdf", "'jkl;'", "asdf"]
+
+        it "words multiple strings" $ do
+            wordStringsAndChars "'jkl;''xxxx'" `shouldBe` Just ["'jkl;'", "'xxxx'"]
+            wordStringsAndChars "'xxxx'asdf'jkl;'" `shouldBe` Just ["'xxxx'", "asdf", "'jkl;'"]
+            wordStringsAndChars "abobus'xxxx'asdf'jkl;'" `shouldBe` Just ["abobus", "'xxxx'", "asdf", "'jkl;'"]
+            wordStringsAndChars "abobus'xxxx'asdf'jkl;'bebra" `shouldBe` Just ["abobus", "'xxxx'", "asdf", "'jkl;'", "bebra"]
+            wordStringsAndChars "abobus'xxxx''jkl;'bebra" `shouldBe` Just ["abobus", "'xxxx'", "'jkl;'", "bebra"]
+            wordStringsAndChars "'lazy''man'abobus'xxxx'asdf'jkl;'bebra'end'"
+                `shouldBe` Just ["'lazy'", "'man'", "abobus", "'xxxx'", "asdf", "'jkl;'", "bebra", "'end'"]
+
+        it "words chars with \\'" $ do
+            wordStringsAndChars "'j\\'kl;'" `shouldBe` Just ["'j\\'kl;'"]
+            wordStringsAndChars "asdf'j\\'kl;'" `shouldBe` Just ["asdf", "'j\\'kl;'"]
+            wordStringsAndChars "'j\\'kl;'asdf" `shouldBe` Just ["'j\\'kl;'", "asdf"]
+            wordStringsAndChars "asdf'j\\'kl;'asdf" `shouldBe` Just ["asdf", "'j\\'kl;'", "asdf"]
+
+        it "words chars with \"" $ do
+            wordStringsAndChars "'j\"kl;'" `shouldBe` Just ["'j\"kl;'"]
+            wordStringsAndChars "asdf'j\"kl;'" `shouldBe` Just ["asdf", "'j\"kl;'"]
+            wordStringsAndChars "'j\"kl;'asdf" `shouldBe` Just ["'j\"kl;'", "asdf"]
+            wordStringsAndChars "asdf'j\"kl;'asdf" `shouldBe` Just ["asdf", "'j\"kl;'", "asdf"]
+
+        it "words chars and strings" $ do
+            wordStringsAndChars "'jkl;'\"xxxx\"" `shouldBe` Just ["'jkl;'", "\"xxxx\""]
+            wordStringsAndChars "\"xxxx\"'jkl;'" `shouldBe` Just ["\"xxxx\"", "'jkl;'"]
+            wordStringsAndChars "'jkl;'asdf\"xxxx\"" `shouldBe` Just ["'jkl;'", "asdf", "\"xxxx\""]
+            wordStringsAndChars "\"xxxx\"asdf'jkl;'" `shouldBe` Just ["\"xxxx\"", "asdf", "'jkl;'"]
+            wordStringsAndChars "'lazy'\"man\"abobus'xxxx'asdf\"jkl;\"bebra'end'"
+                `shouldBe` Just ["'lazy'", "\"man\"", "abobus", "'xxxx'", "asdf", "\"jkl;\"", "bebra", "'end'"]

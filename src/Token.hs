@@ -23,6 +23,7 @@ data Token
     | -- Values
       IDEN String -- User variables
     | CONSTANT Constant
+    | STRING String
     | BUILTIN BuiltIn -- BuiltIn functions
     | OPERATOR BuiltIn -- Operators
     deriving (Show, Eq)

@@ -118,6 +118,7 @@ noappexpr =
         , pletinfun
         , ifthenelse
         , listlit
+        , stringlit
         , BuiltIn <$> builtin
         , Constant <$> constant
         , ExIden <$> iden
@@ -200,6 +201,19 @@ listlit = do
             return e
         foldList [] = Constant Nil
         foldList (e : es) = applyApp [BuiltIn Cons, e, foldList es]
+
+stringlit :: TParser Expr
+stringlit = do
+    s <- getstring
+    return $ foldString s
+    where
+        getstring = do
+            t <- takeOne
+            case t of
+                (STRING s) -> return s
+                _ -> empty
+        foldString [] = Constant Nil
+        foldString (e : es) = applyApp [BuiltIn Cons, Constant $ Chr e, foldString es]
 
 ifthenelse :: TParser Expr
 ifthenelse = do

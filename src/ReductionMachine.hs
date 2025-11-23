@@ -7,6 +7,7 @@ import Control.Monad.ST (ST)
 import Data.STRef (STRef, newSTRef, readSTRef, writeSTRef)
 
 import Ast (BuiltIn (..), Constant (..))
+import Data.Char (chr, ord)
 import Graph
 
 instance MonadFail (ST s) where
@@ -144,6 +145,38 @@ step stackRef = do
                             )
                         _ -> return $ fmap Just last stack
                 )
+            -- Char operations
+            (BuiltIn Ord) ->
+                ( do
+                    case stack of
+                        (_ : ap : rest) ->
+                            ( do
+                                (App _ cRef) <- readSTRef ap
+                                (Constant (Chr c)) <- reduceGraph cRef >>= readSTRef
+                                icomb <- newSTRef $ Comb I
+                                curRes <- newSTRef $ Constant $ Num $ ord c
+                                writeSTRef ap (App icomb curRes)
+                                writeSTRef stackRef (ap : rest)
+                                return Nothing
+                            )
+                        _ -> return $ fmap Just last stack
+                )
+            (BuiltIn GetChr) ->
+                ( do
+                    case stack of
+                        (_ : ap : rest) ->
+                            ( do
+                                (App _ cRef) <- readSTRef ap
+                                (Constant (Num n)) <- reduceGraph cRef >>= readSTRef
+                                icomb <- newSTRef $ Comb I
+                                curRes <- newSTRef $ Constant $ Chr $ chr n
+                                writeSTRef ap (App icomb curRes)
+                                writeSTRef stackRef (ap : rest)
+                                return Nothing
+                            )
+                        _ -> return $ fmap Just last stack
+                )
+            -- List operations
             (BuiltIn Cons) ->
                 ( do
                     case stack of

@@ -6,6 +6,7 @@ import Data.STRef (readSTRef)
 
 import Ast (Constant (..))
 import AstToGraph
+import Data.Maybe (fromJust, isJust)
 import Graph
 import Lexer (uncommentAndTokenize)
 import Parser (parseAst)
@@ -33,13 +34,21 @@ toString graph = do
         toString' :: Graph s -> ST s [Char]
         toString' (Comb c) = return $ show c
         toString' (Constant (Bol b)) = return $ (map toLower . show) b
+        toString' (Constant (Chr c)) = return $ show c
         toString' (Constant (Num i)) = return $ show i
         toString' (Constant Nil) = return "nil"
         toString' (BuiltIn f) = return $ show f
         toString' (Var s) = return $ "var(" ++ s ++ ")"
         toString' p@(Pair{}) = do
-            l <- printList p
-            return $ "[" ++ l ++ "]"
+            l <- convertList p
+            if isString l
+                then
+                    return $ map (fromJust . getChr) l
+                else
+                    ( do
+                        res <- printList l
+                        return $ "[" ++ res ++ "]"
+                    )
         toString' (App gr1 gr2) = do
             g1 <- readSTRef gr1
             lStr <- toString' g1
@@ -47,14 +56,23 @@ toString graph = do
             rStr <- toString' g2
             return $ "(" ++ lStr ++ " " ++ rStr ++ ")"
 
-        printList :: Graph s -> ST s String
-        printList (Constant Nil) = do
-            return ""
-        printList (Pair gr1 gr2) = do
+        getChr (Constant (Chr c)) = Just c
+        getChr _ = Nothing
+        isString = all (isJust . getChr)
+
+        convertList :: Graph s -> ST s [Graph s]
+        convertList (Constant Nil) = do
+            return []
+        convertList (Pair gr1 gr2) = do
             g1 <- reduceGraph gr1 >>= readSTRef
-            lStr <- toString' g1
             g2 <- reduceGraph gr2 >>= readSTRef
-            rStr <- printList g2
-            let connector = if g2 == Constant Nil then "" else ", "
-            return $ lStr ++ connector ++ rStr
-        printList _ = error "Cannot print resulting list: there is (Cons a b), where b is not Cons"
+            rest <- convertList g2
+            return $ g1 : rest
+        convertList _ = error "Cannot convert resulting list: there is (Cons a b), where b is not Cons"
+        printList :: [Graph s] -> ST s String
+        printList [] = return ""
+        printList [g] = toString' g
+        printList (g : gs) = do
+            lStr <- toString' g
+            rStr <- printList gs
+            return $ lStr ++ ", " ++ rStr

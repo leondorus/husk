@@ -4,6 +4,7 @@ module Lexer (
     uncomment,
     tokenize,
     uncommentAndTokenize,
+    wordStringsAndChars,
 ) where
 
 import Control.Applicative (Alternative (..), asum)
@@ -75,7 +76,12 @@ tokenizeOne s
     | s == "nil" = Just $ CONSTANT Nil
     | s == "hd" = Just $ BUILTIN Hd
     | s == "tl" = Just $ BUILTIN Tl
+    -- Chars
+    | s == "ord" = Just $ BUILTIN Ord
+    | s == "chr" = Just $ BUILTIN GetChr
     -- Constants and names
+    | suitableChar s = CONSTANT . Chr <$> readMaybe s
+    | suitableString s = STRING <$> (readMaybe s :: (Maybe String))
     | suitableNum s = CONSTANT . Num <$> readMaybe s
     | suitableName s = Just $ IDEN s
     | otherwise = Nothing
@@ -88,20 +94,85 @@ suitableNum :: String -> Bool
 suitableNum [] = False
 suitableNum cs = all isNumber cs
 
+suitableChar :: String -> Bool
+suitableChar s = isJust (readMaybe s :: (Maybe Char))
+
+suitableString :: String -> Bool
+suitableString s =
+    length s >= 2
+        && head s == '"'
+        && last s == '"'
+        && isJust (readMaybe s :: (Maybe String))
+
 uncommentAndTokenize :: String -> Maybe [Token]
 uncommentAndTokenize = tokenize . uncomment
 
 uncomment :: String -> String
-uncomment [] = []
-uncomment ('#' : cs) = incomment cs
-uncomment (c : cs) = c : uncomment cs
-incomment :: [Char] -> [Char]
-incomment [] = []
-incomment str@('\n' : _) = uncomment str
-incomment (_ : cs) = incomment cs
+uncomment = outside
+    where
+        outside [] = []
+        outside ('#' : cs) = inside cs
+        outside (c : cs) = c : outside cs
+        inside [] = []
+        inside str@('\n' : _) = outside str
+        inside (_ : cs) = inside cs
+
+wordStringsAndChars :: String -> Maybe [String]
+wordStringsAndChars [] = Just [""]
+wordStringsAndChars s = fst <$> parse parseStringChars s
+parseStringChars :: Parser Char [String]
+parseStringChars = do
+    l <- some $ asum [string, char, other]
+    checkEnd
+    return l
+    where
+        other = some $ conv (\c -> c /= '\'' && c /= '"')
+        string = do
+            f <- token '"'
+            m <- parseMiddle '"'
+            l <- token '"'
+            return $ f : (concat m ++ [l])
+        char = do
+            f <- token '\''
+            m <- parseMiddle '\''
+            l <- token '\''
+            return $ f : (concat m ++ [l])
+        parseMiddle sc =
+            many
+                ( do
+                    c <- takeOne
+                    n <- peekOne
+                    let result
+                            | c == sc = empty
+                            | c == '\\' && n == '\\' =
+                                ( do
+                                    skipOne
+                                    return ['\\', '\\']
+                                )
+                            | c == '\\' && n == sc =
+                                ( do
+                                    skipOne
+                                    return ['\\', sc]
+                                )
+                            | otherwise = return [c]
+                    result
+                )
 
 tokenize :: String -> Maybe [Token]
-tokenize = mapM tokenizeOne . concatMap breakOneWord . concatMap breakWordIntoConseq . words
+tokenize s = do
+    stringsAndChars <- wordStringsAndChars s
+    mapM tokenizeOne $ breakIfOther stringsAndChars
+    where
+        breakIfOther =
+            concatMap
+                ( \e -> case e of
+                    ('"' : _) -> [e]
+                    ('\'' : _) -> [e]
+                    _ -> breakIntoProbableTokens e
+                )
+
+breakIntoProbableTokens :: String -> [String]
+breakIntoProbableTokens = concatMap breakOneWord . concatMap breakWordIntoConseq . words
 
 -- Breaks one word into words each is either [a-zA-Z][a-zA-Z0-9|-|_]* or [0-9]* or (!AlphaNum)*
 breakWordIntoConseq :: String -> [String]

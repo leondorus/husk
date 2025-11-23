@@ -53,6 +53,14 @@ peekOne =
             s@(c : _) -> Just (c, s)
         )
 
+skipOne :: Parser t ()
+skipOne =
+    P
+        ( \case
+            [] -> Nothing
+            (_ : cs) -> Just ((), cs)
+        )
+
 conv :: (t -> Bool) -> Parser t t
 conv pr = do
     t <- takeOne
